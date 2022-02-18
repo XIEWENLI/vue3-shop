@@ -46,7 +46,6 @@ export default {
     // 跳转订单页面
     const router = useRouter()
     const jumpOrder = () => {
-      console.log('000')
       router.push('/jumpOrder')
     }
 

@@ -2,12 +2,14 @@
   <van-nav-bar fixed title="订单" />
   <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
     <div v-if="!isLoading">
+      <!-- 无订单显示 -->
       <van-empty
         v-if="isEmptyList"
         class="bj"
         image="https://img.yzcdn.cn/vant/custom-empty-image.png"
         description="购物车空空如也！"
       />
+      <!-- 商品展示 -->
       <van-list
         class="bj"
         v-if="!isEmptyList"
@@ -24,13 +26,18 @@
             :desc="item.goodsDetail"
             :title="item.goodsName"
             :thumb="item.goodsSRC"
-          />
+            ><template #tags>
+              <h3 v-if="item.payState === 'true'">已付款</h3>
+              <h3 v-else style="color: red">未付款</h3>
+            </template></van-card
+          >
           <template #right>
             <van-button
               square
               text="删除"
               type="danger"
               class="delete-button"
+              @click="onDelete"
             />
           </template>
         </van-swipe-cell>
@@ -114,6 +121,11 @@ export default {
       }, 1000)
     }
 
+    // 删除订单
+    const onDelete = () => {
+      alert('未实现')
+    }
+
     return {
       list,
       onLoad,
@@ -121,7 +133,8 @@ export default {
       finished,
       isLoading,
       onRefresh,
-      isEmptyList
+      isEmptyList,
+      onDelete
     }
   }
 }

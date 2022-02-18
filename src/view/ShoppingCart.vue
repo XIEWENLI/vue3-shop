@@ -25,7 +25,11 @@
         </van-card>
         <!-- 动作栏 -->
         <van-action-bar style="margin-bottom: 5px">
-          <van-action-bar-button type="danger" text="立即购买" />
+          <van-action-bar-button
+            type="danger"
+            @click="buyGoods"
+            text="立即购买"
+          />
         </van-action-bar>
       </van-popup>
       <!-- 空白界面 -->
@@ -60,6 +64,7 @@
               text="删除"
               type="danger"
               class="delete-button"
+              @click="onDelete(item.shoppingCarId)"
             />
           </template>
         </van-swipe-cell>
@@ -76,6 +81,7 @@ import request from '@/utils/request.js'
 import Label from '@/components/Label'
 
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'ShoppingCart',
@@ -83,6 +89,7 @@ export default {
     Label
   },
   setup() {
+    const router = useRouter()
     const list = ref([])
     const isEmptyList = ref(false)
     // true则开启加载（加载中为true，异步函数执行）
@@ -164,6 +171,80 @@ export default {
       show.value = true
     }
 
+    // 购买商品
+    const buyGoods = async () => {
+      // 判断登录状态
+      const { data: DLSatate } = await request.get('/getAdminDL')
+      if (DLSatate.data === 'false') {
+        localStorage.removeItem('token')
+      }
+      const token = JSON.parse(localStorage.getItem('token'))
+      if (!token) {
+        router.replace('/jumpLogin')
+        return
+      }
+      // 判断购买数量是否符合库存
+      const { data: res } = await request.get('/getGoodsOne', {
+        params: {
+          _id: goodsDetail._id
+        }
+      })
+      if (buySum.value > res.goods.goodsSum) {
+        alert('库存不足')
+      } else {
+        const payState = confirm('是否支付!')
+        // 订单添加
+        const tokenData = JSON.parse(localStorage.getItem('token'))
+        request.get('/addOrder', {
+          params: {
+            userId: tokenData.userId,
+            goodsId: goodsDetail._id,
+            buySum: buySum.value,
+            payState,
+            deliverState: false,
+            receiveState: false
+          }
+        })
+        // 购买后（无论是否付款），修改库存 goodsSum
+        request.get('/updateGoodsSum', {
+          params: {
+            goodsId: goodsDetail._id,
+            goodsSum: res.goods.goodsSum - buySum.value
+          }
+        })
+        if (payState) {
+          alert('支付成功！')
+          // 购买后刷新页面
+          location.reload()
+        } else {
+          alert('支付失败！')
+          // 购买后刷新页面
+          location.reload()
+        }
+      }
+    }
+
+    // 删除购物车订单
+    const onDelete = async shoppingCarId => {
+      // 判断登录状态
+      const { data: DLSatate } = await request.get('/getAdminDL')
+      if (DLSatate.data === 'false') {
+        localStorage.removeItem('token')
+      }
+      const token = JSON.parse(localStorage.getItem('token'))
+      if (!token) {
+        router.replace('/jumpLogin')
+        return
+      }
+      request.get('deleteShoopingCar', {
+        params: {
+          shoppingCarId
+        }
+      })
+      // 刷新当前页面
+      location.reload()
+    }
+
     return {
       list,
       onLoad,
@@ -175,7 +256,9 @@ export default {
       onShowGoodsPopup,
       show,
       goodsDetail,
-      buySum
+      buySum,
+      buyGoods,
+      onDelete
     }
   }
 }
