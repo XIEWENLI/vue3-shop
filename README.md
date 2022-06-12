@@ -1,4 +1,4 @@
-# fruit-shop-mobile
+# vu3-store
 
 ## Project setup
 ```
